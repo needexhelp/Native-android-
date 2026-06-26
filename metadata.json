@@ -1,0 +1,6 @@
+{
+  "name": "Crowmix",
+  "description": "A gorgeous, high-fidelity Quick Commerce application clone of Crowmix, featuring real-time state, cart engine, tip adding, coupon, and dynamic route-tracking simulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
