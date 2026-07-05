@@ -12,6 +12,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -166,7 +167,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .navigationBarsPadding()
                         .statusBarsPadding(),
-                    containerColor = Color(0xFFF7F9FC),
+                    containerColor = Color(0xFFF8FAFC),
                     bottomBar = {
                         val showCartForBottomBar by viewModel.showCart.collectAsState()
                         if (!isOrderPlaced && !showCartForBottomBar && activeScreen == ActiveScreen.MAIN) {
@@ -255,7 +256,7 @@ class MainActivity : ComponentActivity() {
                                             AppTab.HOME -> MainDashboardScreen(viewModel = viewModel)
                                             AppTab.ORDERS -> com.example.ui.OrdersScreen(viewModel = viewModel)
                                             AppTab.SERVICES -> {
-                                                Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F9FC))) {
+                                                Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
                                                     Box(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
@@ -302,6 +303,7 @@ class MainActivity : ComponentActivity() {
                                     ActiveScreen.BUS -> com.example.ui.BusTicketScreen(onBack = { viewModel.navigateBack() }, onGoHome = { viewModel.navigateTo(ActiveScreen.MAIN); viewModel.setActiveTab(AppTab.HOME) })
                                     ActiveScreen.PROFILE -> com.example.ui.ProfileScreen(onBack = { viewModel.navigateBack() })
                                     ActiveScreen.DOXA_AI -> com.example.ui.DoxaAIScreen(onBack = { viewModel.navigateBack() })
+                                    ActiveScreen.GROCERY -> com.example.ui.GroceryFlowContainer(viewModel = viewModel, onBack = { viewModel.navigateBack() })
                                 }
                             }
                         }
@@ -406,30 +408,43 @@ class MainActivity : ComponentActivity() {
 }
 }
 
-// --- COLOR SELECTORS TIED TO MODE ---
+// ────────────────────────────────────────────────────────────────────
+// 1. BRAND COLOR TOKENS — add to MainActivity.kt
+// ────────────────────────────────────────────────────────────────────
+object CrowmixBrand {
+    val Teal = Color(0xFF059494)
+    val TealDeep = Color(0xFF035C5C)
+    val TealDark = Color(0xFF047575)
+    val TealLight = Color(0xFFE3F5F5)
+
+    val Orange = Color(0xFFFF6B35)
+    val OrangeDark = Color(0xFFE85A2A)
+    val OrangeLight = Color(0xFFFFEEE6)
+
+    val BgLight = Color(0xFFF8FAFC)
+    val TextPrimary = Color(0xFF0F172A)
+    val TextSecondary = Color(0xFF64748B)
+    val Border = Color(0xFFEDF1F5)
+    val Success = Color(0xFF16A34A)
+}
+
+
+// ────────────────────────────────────────────────────────────────────
+// 2. REPLACE — brand color selectors (MainActivity.kt)
+// ────────────────────────────────────────────────────────────────────
 @Composable
-fun getBrandPrimaryColor(mode: CommerceMode): Color = Color(0xFF1A56DB)
+fun getBrandPrimaryColor(mode: CommerceMode): Color = CrowmixBrand.Teal
 
 @Composable
-fun getBrandAccentColor(mode: CommerceMode): Color = Color(0xFF2563EB)
+fun getBrandAccentColor(mode: CommerceMode): Color = CrowmixBrand.Orange
 
 @Composable
 fun getBrandHeaderBrush(mode: CommerceMode): Brush {
-    return if (mode == CommerceMode.ZEPTO) {
-        Brush.verticalGradient(
-            colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB), Color(0xFF2563EB))
-        )
-    } else {
-        Brush.verticalGradient(
-            colors = listOf(Color(0xFFFFD414), Color(0xFFFFE054), Color(0xFFFFF19B))
-        )
-    }
+    return Brush.verticalGradient(colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB)))
 }
 
 @Composable
-fun getBrandTextHeaderColor(mode: CommerceMode): Color {
-    return if (mode == CommerceMode.ZEPTO) Color.White else Color(0xFF1E293B)
-}
+fun getBrandTextHeaderColor(mode: CommerceMode): Color = Color.White
 
 // --- 1. MAIN DASHBOARD SCREEN ---
 @Composable
@@ -443,18 +458,13 @@ fun MainDashboardScreen(viewModel: AppViewModel) {
 
     var showAddressDialog by remember { mutableStateOf(false) }
 
-    val brandPrimary = getBrandPrimaryColor(mode)
-    val brandAccent = getBrandAccentColor(mode)
+    val brandPrimary = CrowmixBrand.Teal
+    val brandAccent = CrowmixBrand.Orange
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
+    Box(modifier = Modifier.fillMaxSize().background(CrowmixBrand.BgLight)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // TOP HEADER
-            var headerVisible by remember { mutableStateOf(false) }
-            LaunchedEffect(Unit) { headerVisible = true }
-            AnimatedVisibility(
-                visible = headerVisible,
-                enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { -it }
-            ) {
+            if (searchActive) {
+                // FIXED HEADER FOR ACTIVE SEARCH MODE
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -465,166 +475,116 @@ fun MainDashboardScreen(viewModel: AppViewModel) {
                         )
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                Column {
-                    // Delivery row
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = Color(0xFFFFD700),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Delivering to",
-                            color = Color.White.copy(alpha = 0.75f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Home  ▾",
-                            color = Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { showAddressDialog = true }
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        // Profile icon button
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.2f))
-                                .clickable { viewModel.navigateTo(ActiveScreen.PROFILE) }
-                                .testTag("profile_icon_header"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = deliveryAddress.ifEmpty { "Pimpri, Pune 411018" },
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { showAddressDialog = true }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // Search Bar with DOXA AI Button
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // BACK BUTTON
+                        IconButton(
+                            onClick = { 
+                                viewModel.setSearchActive(false)
+                                viewModel.setQuery("")
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        // REAL EDITABLE TEXT INPUT FOR SEARCH
                         Box(
                             modifier = Modifier
-                                .weight(0.75f)
-                                .clip(RoundedCornerShape(20.dp))
+                                .weight(1f)
+                                .height(46.dp)
+                                .crowmixShadow(elevation = CrowmixElevation.Medium, shape = RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White)
-                                .clickable { viewModel.setSearchActive(true) }
-                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                                .padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.CenterStart
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = null,
-                                        tint = Color(0xFF9CA3AF),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    androidx.compose.ui.text.buildAnnotatedString {
-                                        append("Search for ")
-                                        pushStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFF59E0B), fontWeight = FontWeight.Bold))
-                                        append("\"AUTO\"")
-                                        pop()
-                                    }.let { annotatedText ->
-                                        Text(
-                                            text = annotatedText,
-                                            fontSize = 13.sp,
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = CrowmixBrand.Teal,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                
+                                val focusManager = LocalFocusManager.current
+                                val keyboardController = LocalSoftwareKeyboardController.current
+                                
+                                Box(modifier = Modifier.weight(1f)) {
+                                    BasicTextField(
+                                        value = searchQuery,
+                                        onValueChange = { viewModel.setQuery(it) },
+                                        textStyle = TextStyle(
+                                            fontSize = 14.sp,
+                                            color = Color(0xFF111827),
                                             fontWeight = FontWeight.Medium
+                                        ),
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                        keyboardActions = KeyboardActions(onSearch = {
+                                            focusManager.clearFocus()
+                                            keyboardController?.hide()
+                                        }),
+                                        modifier = Modifier.fillMaxWidth().testTag("search_bar_input")
+                                    )
+                                    if (searchQuery.isEmpty()) {
+                                        Text(
+                                            text = "Search groceries, medicines, food...",
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF94A3B8)
                                         )
                                     }
                                 }
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
+                                
+                                if (searchQuery.isNotEmpty()) {
                                     Icon(
-                                        imageVector = Icons.Default.AutoAwesome,
-                                        contentDescription = "AI Assistant",
-                                        tint = Color(0xFF06B6D4),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.PhotoCamera,
-                                        contentDescription = "Scanner",
-                                        tint = Color(0xFF4B5563),
-                                        modifier = Modifier.size(18.dp)
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear",
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .clickable { viewModel.setQuery("") }
                                     )
                                 }
                             }
                         }
-
-                        Box(
-                            modifier = Modifier
-                                .weight(0.25f)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(Color.White)
-                                .border(1.dp, Color(0xFFEFF1F4), RoundedCornerShape(20.dp))
-                                .clickable { viewModel.navigateTo(ActiveScreen.DOXA_AI) }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "DOXA AI",
-                                color = Color.Black,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
-                        }
                     }
                 }
-            }
-            }
-
-            // Body Area with dynamic overlays
-            Box(modifier = Modifier.weight(1f)) {
-                if (searchActive) {
-                    SearchOverlay(
-                        viewModel = viewModel,
-                        brandPrimary = brandPrimary,
-                        brandAccent = brandAccent
-                    )
-                } else {
+                
+                // Search suggestions and results overlay
+                Box(modifier = Modifier.weight(1f)) {
+                    SearchOverlay(viewModel = viewModel, brandPrimary = brandPrimary, brandAccent = brandAccent)
+                }
+            } else {
+                // NORMAL MODE: HOME FEED (handles scroll and sticky search bar)
+                Box(modifier = Modifier.weight(1f)) {
                     HomeFeedContent(
                         viewModel = viewModel,
                         selectedCategory = selectedCategory,
                         brandPrimary = brandPrimary,
                         brandAccent = brandAccent,
-                        mode = mode
+                        mode = mode,
+                        deliveryAddress = deliveryAddress.ifEmpty { "Yavatmal, Maharashtra 445001" },
+                        onAddressClick = { showAddressDialog = true }
                     )
                 }
             }
         }
     }
 
-    // --- ADDRESS EDIT DIALOG ---
+    // ADDRESS EDIT DIALOG
     if (showAddressDialog) {
         var tempAddr by remember { mutableStateOf(deliveryAddress) }
         AlertDialog(
@@ -636,7 +596,7 @@ fun MainDashboardScreen(viewModel: AppViewModel) {
                     onValueChange = { tempAddr = it },
                     label = { Text("Delivery Address Details") },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = brandPrimary,
+                        focusedBorderColor = CrowmixBrand.Teal,
                         unfocusedBorderColor = Color(0xFF9CA3AF)
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("address_input")
@@ -648,10 +608,8 @@ fun MainDashboardScreen(viewModel: AppViewModel) {
                         viewModel.setDeliveryAddress(tempAddr)
                         showAddressDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = brandPrimary)
-                ) {
-                    Text("Update Address")
-                }
+                    colors = ButtonDefaults.buttonColors(containerColor = CrowmixBrand.Teal)
+                ) { Text("Update Address") }
             },
             dismissButton = {
                 TextButton(onClick = { showAddressDialog = false }) {
@@ -703,9 +661,9 @@ fun CustomSearchField(
             modifier = Modifier
                 .weight(1f)
                 .height(48.dp)
+                .crowmixShadow(elevation = CrowmixElevation.Medium, shape = RoundedCornerShape(24.dp))
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color.White)
-                .border(1.dp, Color(0xFFEFF1F4), RoundedCornerShape(24.dp))
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
@@ -1027,217 +985,431 @@ fun CustomSearchField(
 }
 
 // --- SUB-WIDGET: HOME FEED CONTENT (NON-SEARCHING MODE) ---
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun HomeFeedContent(
     viewModel: AppViewModel,
     selectedCategory: String,
     brandPrimary: Color,
     brandAccent: Color,
-    mode: CommerceMode
+    mode: CommerceMode,
+    deliveryAddress: String,
+    onAddressClick: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    // Threshold in pixels (approx 320dp) to detect when the services grid on home feed goes off-screen
-    val thresholdPx = with(density) { 320.dp.toPx() }
-    val showCategoryScrollRow = selectedCategory != "all" || scrollState.value > thresholdPx
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Horizontally scrolling category list shows only when main categories are scrolled away or specific category is chosen
-        androidx.compose.animation.AnimatedVisibility(
-            visible = showCategoryScrollRow,
-            enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
-            exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-            ) {
-                CategoryScrollRow(
-                    categories = viewModel.categories,
-                    selectedCategoryId = selectedCategory,
-                    onCategoryChange = { viewModel.selectCategory(it) },
-                    brandColor = brandPrimary
-                )
-                Divider(color = Color(0xFFE2E8F0), thickness = 1.dp)
-            }
+    val listState = rememberLazyListState()
+    
+    // Show the category scroll row if category selected is not all, or if we scrolled past the delivery row and search bar
+    val showCategoryScrollRow by remember {
+        derivedStateOf {
+            selectedCategory != "all" || listState.firstVisibleItemIndex > 0 || (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset > 220)
         }
+    }
 
-        Box(modifier = Modifier.weight(1f)) {
-            // Main vertical content scroll
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(bottom = 80.dp) // padding to avoid bottom cart bar
-            ) {
-                // Premium Auto-sliding Promotion Carousel (Grocery, Food, Medicine, Tickets)
-                PromotionCarousel(brandPrimary = brandPrimary)
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 80.dp)
+        ) {
+            // 1. ORIGINAL HEADER (Delivering to, Address, Search Bar, DOXA AI) - Scrollable
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
+                            )
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Column {
+                        // Delivery row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = CrowmixBrand.Orange,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Delivering to",
+                                color = Color.White.copy(alpha = 0.75f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Home  ▾",
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { onAddressClick() }
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            // Profile icon
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .crowmixShadow(elevation = CrowmixElevation.Low, shape = CircleShape)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                                    .clickable { viewModel.navigateTo(ActiveScreen.PROFILE) }
+                                    .testTag("profile_icon_header"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Person,
+                                    contentDescription = "Profile",
+                                    tint = CrowmixBrand.Teal,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = deliveryAddress,
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.clickable { onAddressClick() }
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                // Dynamic layout rendering based on filtered categories
-                val filteredProducts = if (selectedCategory == "all") {
-                    viewModel.products
-                } else {
-                    viewModel.products.filter { it.category == selectedCategory }
+                        // Original Search Bar + DOXA AI button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(0.72f)
+                                    .crowmixShadow(elevation = CrowmixElevation.Medium, shape = RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color.White)
+                                    .clickable { viewModel.setSearchActive(true) }
+                                    .padding(horizontal = 14.dp, vertical = 13.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = null,
+                                            tint = CrowmixBrand.Teal,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        androidx.compose.ui.text.buildAnnotatedString {
+                                            append("Search for ")
+                                            pushStyle(androidx.compose.ui.text.SpanStyle(color = CrowmixBrand.Orange, fontWeight = FontWeight.Bold))
+                                            append("\"medicines\"")
+                                            pop()
+                                        }.let { annotatedText ->
+                                            Text(text = annotatedText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                        }
+                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.PhotoCamera,
+                                        contentDescription = "Scanner",
+                                        tint = Color(0xFF94A3B8),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(0.28f)
+                                    .crowmixShadow(elevation = CrowmixElevation.Medium, shape = RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Brush.horizontalGradient(listOf(CrowmixBrand.Orange, CrowmixBrand.OrangeDark)))
+                                    .clickable { viewModel.navigateTo(ActiveScreen.DOXA_AI) }
+                                    .padding(vertical = 13.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.AutoAwesome,
+                                        contentDescription = "AI Assistant",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(text = "DOXA", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                }
+                            }
+                        }
+                    }
                 }
+            }
 
-                if (selectedCategory == "all") {
+            // 2. PROMOTION CAROUSEL
+            item {
+                PromotionCarousel(brandPrimary = CrowmixBrand.Teal)
+            }
+
+            // 3. MAIN FEED CONTENT depending on selectedCategory
+            val filteredProducts = if (selectedCategory == "all") {
+                viewModel.products
+            } else {
+                viewModel.products.filter { it.category == selectedCategory }
+            }
+
+            if (selectedCategory == "all") {
+                // SERVICES GRID
+                item {
                     com.example.ui.ServicesGrid(
                         viewModel = viewModel,
                         columns = 4,
                         onServiceClick = { s -> viewModel.navigateTo(s) }
                     )
+                }
 
-                    // Section 1: Fresh Fruits & Vegetables (Fully styled)
-                    Column(modifier = Modifier.padding(top = 16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Fresh Fruits & Vegetables 🍎",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF111827)
-                                )
-                                Text(
-                                    text = "Direct from farms delivered in minutes",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = Color(0xFF6B7280)
-                                )
-                            }
-                            Text(
-                                text = "See All",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1A56DB),
-                                modifier = Modifier.clickable { viewModel.selectCategory("veg") }
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HorizontalProductScrollRow(
-                            products = viewModel.products.filter { it.category == "veg" },
-                            viewModel = viewModel,
-                            brandPrimary = brandPrimary,
-                            brandAccent = brandAccent
-                        )
-                    }
+                // FRUITS & VEGETABLES
+                item {
+                    SectionHeader(
+                        emojiTitle = "Fresh Fruits & Vegetables 🍎",
+                        subtitle = "Direct from farms delivered in minutes",
+                        showSeeAll = true,
+                        onSeeAll = { viewModel.selectCategory("veg") }
+                    )
+                    HorizontalProductScrollRow(
+                        products = viewModel.products.filter { it.category == "veg" },
+                        viewModel = viewModel,
+                        brandPrimary = CrowmixBrand.Teal,
+                        brandAccent = CrowmixBrand.Orange
+                    )
+                }
 
-                    // Section 2: Popular Restaurants (Premium Swiggy/Zomato style)
-                    Column(modifier = Modifier.padding(top = 20.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Popular Restaurants Nearby 🍽️",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF111827)
-                                )
-                                Text(
-                                    text = "Top picks, fast delivery & exclusive discounts",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = Color(0xFF6B7280)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        PopularRestaurantsRow(brandPrimary = brandPrimary)
-                    }
+                // RESTAURANTS
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SectionHeader(
+                        emojiTitle = "Popular Restaurants Nearby 🍽️",
+                        subtitle = "Top picks, fast delivery & exclusive discounts",
+                        showSeeAll = false
+                    )
+                    PopularRestaurantsRow(brandPrimary = CrowmixBrand.Teal)
+                }
 
-                    // Section 3: Medicines Near You (Premium Pharmacy scroll)
-                    Column(modifier = Modifier.padding(top = 20.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Medicines & Wellness Near You 💊",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF111827)
-                                )
-                                Text(
-                                    text = "Express healthcare & pharmacy essentials",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = Color(0xFF6B7280)
-                                )
-                            }
-                            Text(
-                                text = "See All",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1A56DB),
-                                modifier = Modifier.clickable { viewModel.navigateTo(ActiveScreen.MEDICINE) }
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HorizontalProductScrollRow(
-                            products = viewModel.products.filter { it.category == "medicine" },
-                            viewModel = viewModel,
-                            brandPrimary = brandPrimary,
-                            brandAccent = brandAccent
-                        )
-                    }
+                // MEDICINES
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SectionHeader(
+                        emojiTitle = "Medicines & Wellness Near You 💊",
+                        subtitle = "Express healthcare & pharmacy essentials",
+                        showSeeAll = true,
+                        onSeeAll = { viewModel.navigateTo(ActiveScreen.MEDICINE) }
+                    )
+                    HorizontalProductScrollRow(
+                        products = viewModel.products.filter { it.category == "medicine" },
+                        viewModel = viewModel,
+                        brandPrimary = CrowmixBrand.Teal,
+                        brandAccent = CrowmixBrand.Orange
+                    )
+                }
 
-                    // Section 4: Snacks & Late Night Munchies
-                    Column(modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)) {
-                        Text(
-                            text = "Snacks & Late Night Munchies 🍿",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF111827),
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HorizontalProductScrollRow(
-                            products = viewModel.products.filter { it.category == "snacks" || it.category == "instant" },
-                            viewModel = viewModel,
-                            brandPrimary = brandPrimary,
-                            brandAccent = brandAccent
-                        )
-                    }
-                } else {
-                    // Render Grid for active category
-                    val catObj = viewModel.categories.firstOrNull { it.id == selectedCategory }
+                // SNACKS & LATE NIGHT
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Snacks & Late Night Munchies 🍿",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = CrowmixBrand.TextPrimary,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
+                    )
+                    HorizontalProductScrollRow(
+                        products = viewModel.products.filter { it.category == "snacks" || it.category == "instant" },
+                        viewModel = viewModel,
+                        brandPrimary = CrowmixBrand.Teal,
+                        brandAccent = CrowmixBrand.Orange
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            } else {
+                // CATEGORY-SPECIFIC PRODUCTS LIST
+                val catObj = viewModel.categories.firstOrNull { it.id == selectedCategory }
+                item {
                     Text(
                         text = "${catObj?.name ?: "Grocery Store"} Items (${filteredProducts.size})",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A),
+                        color = CrowmixBrand.TextPrimary,
                         modifier = Modifier.padding(16.dp)
                     )
+                }
 
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
+                // Chunk the filtered products to display them in a 2-column grid inside LazyColumn
+                val chunkedProducts = filteredProducts.chunked(2)
+                items(chunkedProducts) { pair ->
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(550.dp)
-                            .padding(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(filteredProducts) { item ->
+                        // First item in the pair
+                        Box(modifier = Modifier.weight(1f)) {
                             GridProductCard(
-                                product = item,
+                                product = pair[0],
                                 viewModel = viewModel,
-                                brandPrimary = brandPrimary,
-                                brandAccent = brandAccent
+                                brandPrimary = CrowmixBrand.Teal,
+                                brandAccent = CrowmixBrand.Orange
                             )
+                        }
+                        
+                        // Second item in the pair (if it exists)
+                        if (pair.size > 1) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                GridProductCard(
+                                    product = pair[1],
+                                    viewModel = viewModel,
+                                    brandPrimary = CrowmixBrand.Teal,
+                                    brandAccent = CrowmixBrand.Orange
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
             }
+        }
+
+        // 4. STICKY OVERLAY containing Search Bar (with Doxa AI button) up and Category Bar down with a 2dp shadow
+        androidx.compose.animation.AnimatedVisibility(
+            visible = showCategoryScrollRow,
+            enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+            exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .crowmixShadow(elevation = 2.dp, shape = RoundedCornerShape(0.dp))
+                    .background(Color.White)
+            ) {
+                // Upper: Search bar with DOXA AI button styled with a warm light cream background
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFFEFCE8))
+                        .padding(start = 16.dp, end = 16.dp, bottom = 12.dp, top = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(0.70f)
+                                .crowmixShadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                                .clickable { viewModel.setSearchActive(true) }
+                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                androidx.compose.ui.text.buildAnnotatedString {
+                                    append("Search for ")
+                                    pushStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFF94A3B8), fontWeight = FontWeight.Normal))
+                                    append("\"chips\"")
+                                    pop()
+                                }.let { annotatedText ->
+                                    Text(
+                                        text = annotatedText,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                }
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .weight(0.30f)
+                                .crowmixShadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White)
+                                .clickable { viewModel.navigateTo(ActiveScreen.DOXA_AI) }
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "DOXA AI",
+                                color = Color(0xFF0F172A),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    }
+                }
+                
+                Divider(color = CrowmixBrand.Border, thickness = 1.dp)
+
+                // Below: Category Scroll Row
+                CategoryScrollRow(
+                    categories = viewModel.categories,
+                    selectedCategoryId = selectedCategory,
+                    onCategoryChange = { viewModel.selectCategory(it) },
+                    brandColor = CrowmixBrand.Teal
+                )
+                Divider(color = CrowmixBrand.Border, thickness = 1.dp)
+            }
+        }
+    }
+}
+
+// NEW small helper — keeps every section header consistent (Blinkit-style)
+@Composable
+private fun SectionHeader(
+    emojiTitle: String,
+    subtitle: String,
+    showSeeAll: Boolean,
+    onSeeAll: () -> Unit = {}
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(emojiTitle, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CrowmixBrand.TextPrimary)
+            Text(subtitle, fontSize = 11.sp, fontWeight = FontWeight.Normal, color = CrowmixBrand.TextSecondary)
+        }
+        if (showSeeAll) {
+            Text(
+                text = "See All",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = CrowmixBrand.Teal,
+                modifier = Modifier.clickable { onSeeAll() }
+            )
         }
     }
 }
@@ -1254,7 +1426,7 @@ fun CategoryScrollRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
-            .padding(vertical = 10.dp),
+            .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
@@ -1262,22 +1434,33 @@ fun CategoryScrollRow(
             val isSelected = category.id == selectedCategoryId
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(30.dp))
-                    .background(if (isSelected) brandColor else Color(0xFFF1F5F9))
+                    .crowmixShadow(
+                        elevation = if (isSelected) CrowmixElevation.Medium else CrowmixElevation.Low,
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    .background(
+                        color = if (isSelected) Color(0xFF0EA5E9) else Color(0xFFE0F2FE),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (isSelected) Color(0xFF0EA5E9) else Color(0xFFBAE6FD),
+                        shape = RoundedCornerShape(14.dp)
+                    )
                     .clickable { onCategoryChange(category.id) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
                     .testTag("cat_button_${category.id}"),
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = category.labelChar, fontSize = 14.sp)
+                    Text(text = category.labelChar, fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = category.name,
                         style = TextStyle(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isSelected) Color.White else Color(0xFF334155)
+                            color = if (isSelected) Color.White else CrowmixBrand.TextPrimary
                         )
                     )
                 }
@@ -1566,14 +1749,11 @@ fun PopularRestaurantsRow(brandPrimary: Color) {
         Triple("La Pino'z Pizza", "Pizza • Italian • 4.3 ★ • 20m", "50% OFF"),
         Triple("Starbucks Coffee", "Beverages • Brews • 4.6 ★ • 12m", "Free Delivery")
     )
-    
     val imgCharList = listOf("🍔", "🍛", "🍕", "☕")
     val colors = listOf(0xFFFFF9E6, 0xFFFFEBE3, 0xFFFFEBEB, 0xFFE0F2FE)
 
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
@@ -1582,51 +1762,46 @@ fun PopularRestaurantsRow(brandPrimary: Color) {
             Card(
                 modifier = Modifier
                     .width(160.dp)
-                    .crowmixShadow(elevation = CrowmixElevation.Low, shape = RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
+                    .crowmixShadow(elevation = CrowmixElevation.Low, shape = RoundedCornerShape(16.dp)),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, Color(0xFFEEF2F7))
+                border = BorderStroke(1.dp, CrowmixBrand.Border),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(84.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(Color(colors[idx])),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(imgCharList[idx], fontSize = 36.sp)
-                        
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
-                                .background(Color(0xFF00C853), RoundedCornerShape(topEnd = 10.dp, bottomStart = 14.dp))
+                                .background(
+                                    brush = Brush.horizontalGradient(listOf(CrowmixBrand.Orange, CrowmixBrand.OrangeDark)),
+                                    shape = RoundedCornerShape(topEnd = 10.dp, bottomStart = 12.dp)
+                                )
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Text(
-                                text = rest.third,
-                                color = Color.White,
-                                fontWeight = FontWeight.Black,
-                                fontSize = 9.sp
-                            )
+                            Text(text = rest.third, color = Color.White, fontWeight = FontWeight.Black, fontSize = 9.sp)
                         }
                     }
-
                     Spacer(modifier = Modifier.height(8.dp))
-                    
                     Text(
                         text = rest.first,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF111827),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = CrowmixBrand.TextPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    
                     Text(
                         text = rest.second,
-                        color = Color(0xFF6B7280),
+                        color = CrowmixBrand.TextSecondary,
                         fontSize = 11.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -1796,65 +1971,65 @@ fun ProductCard(
 ) {
     val cartItems by viewModel.cartItems.collectAsState()
     val qty = cartItems[product.id] ?: 0
-
     val discountPercent = product.discountPercent ?: 18
 
     Card(
         modifier = Modifier
             .width(160.dp)
-            .crowmixShadow(
-                elevation = CrowmixElevation.Low,
-                shape = RoundedCornerShape(16.dp)
-            )
+            .crowmixShadow(elevation = CrowmixElevation.Low, shape = RoundedCornerShape(16.dp))
             .clickable { viewModel.showProductDetail(product) },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFEFF1F4)),
+        border = BorderStroke(1.dp, CrowmixBrand.Border),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
-            // Discount badge
+            // Discount tag
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFFEFF6FF))
+                    .background(CrowmixBrand.OrangeLight)
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = "$discountPercent% OFF",
-                    color = Color(0xFF1A56DB),
+                    color = CrowmixBrand.Orange,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            // Product image placeholder
+
+            // Emoji / Image container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(90.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .crowmixShadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(Color(product.tintColorHex)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(product.labelChar, fontSize = 36.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = product.name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF111827),
+                color = CrowmixBrand.TextPrimary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = product.qtyUnit,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Normal,
-                color = Color(0xFF6B7280)
+                color = CrowmixBrand.TextSecondary
             )
             Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1865,13 +2040,14 @@ fun ProductCard(
                         text = "₹${product.price.toInt()}",
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp,
-                        color = Color(0xFF111827)
+                        color = CrowmixBrand.TextPrimary
                     )
                     val original = product.originalPrice ?: (product.price * 1.2)
                     Text(
                         text = "₹${original.toInt()}",
                         fontSize = 11.sp,
-                        color = Color(0xFF9CA3AF),
+                        fontWeight = FontWeight.Normal,
+                        color = CrowmixBrand.TextSecondary,
                         textDecoration = TextDecoration.LineThrough
                     )
                 }
@@ -1882,12 +2058,12 @@ fun ProductCard(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFFEFF6FF))
+                            .background(CrowmixBrand.TealLight)
                             .padding(horizontal = 6.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = "—",
-                            color = Color(0xFF1A56DB),
+                            color = CrowmixBrand.TealDeep,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
@@ -1897,13 +2073,13 @@ fun ProductCard(
                         )
                         Text(
                             text = "$qty",
-                            color = Color(0xFF1A56DB),
+                            color = CrowmixBrand.TealDeep,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "+",
-                            color = Color(0xFF1A56DB),
+                            color = CrowmixBrand.TealDeep,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
@@ -1916,18 +2092,16 @@ fun ProductCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(
-                                Brush.horizontalGradient(listOf(Color(0xFF1A3BBF), Color(0xFF2563EB)))
-                            )
+                            .background(Color(0xFF1A56DB))
                             .clickable { viewModel.addToCart(product.id) }
                             .testTag("initial_add_cart_${product.id}")
                             .padding(horizontal = 14.dp, vertical = 9.dp)
                     ) {
                         Text(
-                            text = "+ Add",
+                            text = "ADD",
                             color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black
                         )
                     }
                 }
@@ -1970,6 +2144,7 @@ fun GridProductCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
+                    .crowmixShadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp))
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color(product.tintColorHex)),
                 contentAlignment = Alignment.Center
@@ -2040,14 +2215,14 @@ fun GridProductCard(
                         .width(68.dp)
                         .clickable { viewModel.addToCart(product.id) }
                         .testTag("grid_initial_add_cart_${product.id}"),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A56DB)),
                     shape = RoundedCornerShape(15.dp),
-                    border = BorderStroke(1.5.dp, Color(0xFF2563EB))
+                    border = BorderStroke(1.5.dp, Color(0xFF1A56DB))
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = "ADD",
-                            color = Color(0xFF2563EB),
+                            color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black
                         )
@@ -2071,7 +2246,7 @@ fun GridProductCard(
             ) {
                 Text(
                     text = "₹${product.price.toInt()}",
-                    color = Color(0xFF111827),
+                    color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -2081,7 +2256,8 @@ fun GridProductCard(
                     text = "₹${product.originalPrice.toInt()}",
                     style = TextStyle(
                         color = Color(0xFF94A3B8),
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Normal,
                         textDecoration = TextDecoration.LineThrough
                     )
                 )
@@ -2102,7 +2278,8 @@ fun GridProductCard(
         // Qty/Weight
         Text(
             text = product.qtyUnit,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Normal,
             color = Color(0xFF64748B),
             modifier = Modifier.padding(top = 1.dp)
         )
@@ -2183,7 +2360,7 @@ fun SearchOverlay(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFF8FAFC))
             .padding(16.dp)
     ) {
         if (query.isEmpty()) {
@@ -2341,7 +2518,7 @@ fun SearchItemRow(
         } else {
             Button(
                 onClick = { viewModel.addToCart(product.id) },
-                colors = ButtonDefaults.buttonColors(containerColor = brandPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A56DB)),
                 shape = RoundedCornerShape(6.dp),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                 modifier = Modifier.height(28.dp)
@@ -3224,7 +3401,7 @@ fun CartDrawerSheet(
                             .height(54.dp)
                             .testTag("submit_checkout_btn"),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = crowmixGreen
+                            containerColor = Color(0xFF1A56DB)
                         ),
                         shape = RoundedCornerShape(10.dp)
                     ) {
@@ -3299,7 +3476,7 @@ fun CartDrawerSheet(
                         viewModel.setDeliveryAddress(tempAddress)
                         showAddressDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = crowmixGreen)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A56DB))
                 ) {
                     Text("SAVE", color = Color.White, fontWeight = FontWeight.Bold)
                 }
@@ -3365,7 +3542,7 @@ fun OrderTrackingScreen(viewModel: AppViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White) // Light background matching user preference
+            .background(Color(0xFFF8FAFC)) // Light background matching user preference
             .padding(16.dp)
             .verticalScroll(scrollState)
     ) {
@@ -4190,7 +4367,7 @@ fun OrderTrackingScreen(viewModel: AppViewModel) {
                             showBillInvoiceOverlay = false
                             Toast.makeText(context, "SUCCESS ✅: PDF Receipt saved to internal Downloads folder!", Toast.LENGTH_LONG).show()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = if (mode == CommerceMode.ZEPTO) Color(0xFF1A56DB) else Color(0xFF0C8346)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A56DB)),
                         shape = RoundedCornerShape(20.dp), // Corner radius of 20px (20dp) as requested!
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -4503,3 +4680,4 @@ fun PermissionRow(
         }
     }
 }
+

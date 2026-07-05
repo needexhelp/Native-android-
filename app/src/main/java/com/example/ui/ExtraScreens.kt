@@ -57,7 +57,7 @@ import com.example.ui.connect.common.CityPickerScreen
 // Brand color palette
 val crowmixBlue = Color(0xFF1A56DB) // Zepto Violet
 val crowmixAccent = Color(0xFF2563EB)   // Zepto Pink was Color(0xFFE01D75), now green
-val lightBg = Color(0xFFF7F9FC)
+val lightBg = Color(0xFFF8FAFC)
 val Orange = Color(0xFFFF6D00)
 
 val Color.Companion.Orange: Color
@@ -89,14 +89,14 @@ data class FeaturedDish(
 @Composable
 fun getServicesList(): List<ServiceItem> {
     return listOf(
-        ServiceItem("grocery", "Grocery", "🛒", Color(0xFFEFF6FF), ActiveScreen.MAIN, "Fresh goods & veggies", "8 mins ⚡"),
-        ServiceItem("food", "Food", "🍔", Color(0xFFFFF7ED), ActiveScreen.FOOD, "Hot bites near you", "15 mins 🛵"),
-        ServiceItem("medicine", "Medicine", "💊", Color(0xFFECFDF5), ActiveScreen.MEDICINE, "Licensed Pharmacy", "10 mins ⚕️"),
-        ServiceItem("hospital", "Hospital", "🏥", Color(0xFFEFF6FF), ActiveScreen.HOSPITAL, "Verified specialist", "Schedule"),
+        ServiceItem("grocery", "Grocery", "🛒", Color(0xFFDCFCE7), ActiveScreen.GROCERY, "Fresh goods & veggies", "8 mins ⚡"),
+        ServiceItem("food", "Food", "🍔", Color(0xFFFEF3C7), ActiveScreen.FOOD, "Hot bites near you", "15 mins 🛵"),
+        ServiceItem("medicine", "Medicine", "💊", Color(0xFFF3E8FF), ActiveScreen.MEDICINE, "Licensed Pharmacy", "10 mins ⚕️"),
+        ServiceItem("hospital", "Hospital", "🏥", Color(0xFFE0F2FE), ActiveScreen.HOSPITAL, "Verified specialist", "Schedule"),
         ServiceItem("taxi", "Taxi", "🚕", Color(0xFFFEF9C3), ActiveScreen.TAXI, "Micro, Sedan, Auto", "Nearby 🚕"),
         ServiceItem("ambulance", "Ambulance", "🚑", Color(0xFFFEE2E2), ActiveScreen.AMBULANCE, "Emergency response", "4 mins 🚨"),
-        ServiceItem("print", "Print", "🖨️", Color(0xFFF5F3FF), ActiveScreen.PRINT, "A4 color & laminations", "Pick up"),
-        ServiceItem("bus", "Bus", "🚌", Color(0xFFECFDF5), ActiveScreen.BUS, "AC Sleeper & Intercity", "Book now")
+        ServiceItem("print", "Print", "🖨️", Color(0xFFE0E7FF), ActiveScreen.PRINT, "A4 color & laminations", "Pick up"),
+        ServiceItem("bus", "Bus", "🚌", Color(0xFFE0F8F5), ActiveScreen.BUS, "AC Sleeper & Intercity", "Book now")
     )
 }
 
@@ -112,20 +112,19 @@ fun ServicesGrid(viewModel: AppViewModel, columns: Int = 4, onServiceClick: (Act
             Column {
                 Text(
                     text = "Super Services ⚡",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111827)
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
+                    color = CrowmixBrand.TextPrimary
                 )
                 Text(
                     text = "Hyperlocal deliveries & bookings in minutes",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = Color(0xFF6B7280)
+                    fontSize = 11.sp,
+                    color = CrowmixBrand.TextSecondary
                 )
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
         
         val chunked = services.chunked(4)
         Column(
@@ -148,9 +147,12 @@ fun ServicesGrid(viewModel: AppViewModel, columns: Int = 4, onServiceClick: (Act
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(4.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(Color.White)
-                                    .border(BorderStroke(1.dp, Color(0xFFE5E7EB)), RoundedCornerShape(16.dp))
+                                    .crowmixShadow(
+                                        elevation = CrowmixElevation.Low,
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .background(Color.White, RoundedCornerShape(16.dp))
+                                    .border(BorderStroke(1.dp, CrowmixBrand.Border), RoundedCornerShape(16.dp))
                                     .clickable { onServiceClick(svc.screen) }
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -158,8 +160,9 @@ fun ServicesGrid(viewModel: AppViewModel, columns: Int = 4, onServiceClick: (Act
                                 Box(
                                     modifier = Modifier
                                         .size(56.dp)
-                                        .clip(CircleShape)
-                                        .background(svc.bgColor),
+                                        .shadow(2.dp, RoundedCornerShape(12.dp), clip = false)
+                                        .background(svc.bgColor, RoundedCornerShape(12.dp))
+                                        .clip(RoundedCornerShape(12.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(svc.emoji, fontSize = 26.sp)
@@ -167,11 +170,11 @@ fun ServicesGrid(viewModel: AppViewModel, columns: Int = 4, onServiceClick: (Act
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = svc.name,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF111827),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = CrowmixBrand.TextPrimary,
                                     textAlign = TextAlign.Center,
-                                    maxLines = 2,
+                                    maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
@@ -308,7 +311,11 @@ fun FoodOrderScreen(viewModel: AppViewModel, onBack: () -> Unit, modifier: Modif
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(180.dp)
-                                                .background(Color(0xFF1E1E1E)),
+                                                .background(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(Color(0xFF2D1610), Color(0xFF1A0A07))
+                                                     )
+                                                 ),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(dish.emoji, fontSize = 64.sp)
@@ -545,7 +552,7 @@ fun RestaurantAndDishDetailsScreen(
         matchesSearch && matchesFilter
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             
             Box(
@@ -772,15 +779,15 @@ fun RestaurantAndDishDetailsScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
                                     
                                     if (qty == 0) {
-                                        OutlinedButton(
+                                        Button(
                                             onClick = { 
                                                 viewModel.addFoodToCart(spec.id)
                                                 Toast.makeText(context, "${spec.name} added!", Toast.LENGTH_SHORT).show()
                                             },
                                             modifier = Modifier.fillMaxWidth().height(32.dp).testTag("add_spec_item_${spec.id}"),
-                                            border = BorderStroke(1.dp, Color(0xFF2E7D32)),
+                                            border = BorderStroke(1.dp, Color(0xFF1A56DB)),
                                             shape = RoundedCornerShape(8.dp),
-                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF2E7D32)),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A56DB), contentColor = Color.White),
                                             contentPadding = PaddingValues(0.dp)
                                         ) {
                                             Text("ADD +", fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -1015,12 +1022,12 @@ fun RestaurantAndDishDetailsScreen(
                                                         Toast.makeText(context, "${dish.name} added to cart!", Toast.LENGTH_SHORT).show()
                                                     }
                                                     .testTag("add_rec_dish_${dish.id}"),
-                                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                                border = BorderStroke(1.2.dp, Color(0xFF2E7D32)),
+                                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1A56DB)),
+                                                border = BorderStroke(1.2.dp, Color(0xFF1A56DB)),
                                                 shape = RoundedCornerShape(8.dp)
                                             ) {
                                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                                    Text("ADD", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                                    Text("ADD", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                                 }
                                             }
                                         } else {
@@ -1029,7 +1036,7 @@ fun RestaurantAndDishDetailsScreen(
                                                     .width(76.dp)
                                                     .height(30.dp),
                                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                                border = BorderStroke(1.2.dp, Color(0xFF2E7D32)),
+                                                border = BorderStroke(1.2.dp, Color(0xFF1A56DB)),
                                                 shape = RoundedCornerShape(8.dp)
                                             ) {
                                                 Row(
@@ -5787,7 +5794,11 @@ fun ColonyGroupPreviewScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(tealPrimary)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
+                        )
+                    )
                     .padding(horizontal = 8.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -7874,7 +7885,18 @@ fun NewsScreen(modifier: Modifier = Modifier, viewModel: AppViewModel) {
                 }
                 "DASHBOARD" -> {
                     Column(Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
-                        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = tealPrimary), shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)) {
+                        Card(
+                            Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
+                                    ),
+                                    shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                                ),
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                            shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                        ) {
                             Column(Modifier.fillMaxWidth().padding(14.dp)) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -8504,8 +8526,18 @@ fun NewsScreen(modifier: Modifier = Modifier, viewModel: AppViewModel) {
 
                 "NEW_CHAT" -> {
                     var query by remember { mutableStateOf("") }
-                    Column(Modifier.fillMaxSize().background(Color.White)) {
-                        Row(Modifier.fillMaxWidth().background(tealPrimary).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
+                                    )
+                                )
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             IconButton(onClick = { connectSubScreen = "DASHBOARD" }) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) }
                             Text("New Chat", color = Color.White, fontWeight = FontWeight.Bold)
                         }
@@ -8554,7 +8586,17 @@ fun NewsScreen(modifier: Modifier = Modifier, viewModel: AppViewModel) {
 
                         Column(Modifier.fillMaxSize().background(Color(0xFFF1F5F9))) {
                             // Header Top Bar
-                            Row(Modifier.fillMaxWidth().background(tealPrimary).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
+                                        )
+                                    )
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 IconButton(onClick = { connectSubScreen = "DASHBOARD" }) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) }
                                 Row(Modifier.weight(1f).clickable { connectSubScreen = "CHAT_PROFILE" }.testTag("conversation_header_title_bar"), verticalAlignment = Alignment.CenterVertically) {
                                     Text(chat.avatarEmoji, fontSize = 20.sp)
@@ -8790,8 +8832,18 @@ fun NewsScreen(modifier: Modifier = Modifier, viewModel: AppViewModel) {
                 }
 
                 "CREATE_GROUP" -> {
-                    Column(Modifier.fillMaxSize().background(Color.White)) {
-                        Row(Modifier.fillMaxWidth().background(tealPrimary).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
+                                    )
+                                )
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             IconButton(onClick = { connectSubScreen = "NEW_CHAT" }) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) }
                             Text("Create Group", color = Color.White)
                         }
@@ -8844,8 +8896,17 @@ fun NewsScreen(modifier: Modifier = Modifier, viewModel: AppViewModel) {
                 "CHAT_PROFILE" -> {
                     val chat = chats.firstOrNull { it.id == selectedConversationId }
                     if (chat == null) connectSubScreen = "DASHBOARD" else {
-                        Column(Modifier.fillMaxSize().background(Color.White).verticalScroll(rememberScrollState())) {
-                            Row(Modifier.fillMaxWidth().background(tealPrimary).padding(12.dp)) {
+                        Column(Modifier.fillMaxSize().background(Color(0xFFF8FAFC)).verticalScroll(rememberScrollState())) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
+                                        )
+                                    )
+                                    .padding(12.dp)
+                            ) {
                                 IconButton(onClick = { connectSubScreen = "CHAT_CONVERSATION" }) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) }
                                 Text("Contact Location Profile", color = Color.White)
                             }
@@ -8935,13 +8996,17 @@ fun NewsScreen(modifier: Modifier = Modifier, viewModel: AppViewModel) {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.White)
+                                .background(Color(0xFFF8FAFC))
                         ) {
                             // Top Bar with back button
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(tealPrimary)
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
+                                        )
+                                    )
                                     .padding(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -9460,7 +9525,7 @@ fun ConnectProfileSetupFlow(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White)
+                    .background(Color(0xFFF8FAFC))
                     .verticalScroll(rememberScrollState())
             ) {
                 Row(
@@ -9693,7 +9758,7 @@ fun ConnectProfileSetupFlow(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White)
+                    .background(Color(0xFFF8FAFC))
                     .verticalScroll(rememberScrollState())
             ) {
                 Row(
@@ -10466,7 +10531,7 @@ fun OtherPartnerPanelPlaceholderScreen(
                         Button(
                             onClick = { isNotifOn = !isNotifOn },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isNotifOn) Color(0xFF10B981) else Color(0xFF687280)
+                                containerColor = if (isNotifOn) Color(0xFF1A56DB) else Color(0xFF687280)
                             ),
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             modifier = Modifier
@@ -10846,7 +10911,7 @@ fun DeliveryBoyPanelScreen(
                             Button(
                                 onClick = { isNotifOn = !isNotifOn },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isNotifOn) Color(0xFF10B981) else Color(0xFF687280)
+                                    containerColor = if (isNotifOn) Color(0xFF1A56DB) else Color(0xFF687280)
                                 ),
                                 contentPadding = PaddingValues(horizontal = 10.dp),
                                 modifier = Modifier
@@ -11494,9 +11559,9 @@ fun DeliveryActiveOrderScreen(
                     onClick = { currentStep = 2 },
                     enabled = step1Enabled,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (step1Done) Color(0xFF10B981) else Color.White,
+                        containerColor = if (step1Done) Color(0xFF1A56DB) else Color.White,
                         contentColor = if (step1Done) Color.White else Color(0xFF687280),
-                        disabledContainerColor = if (step1Done) Color(0xFF10B981) else Color(0xFFE2E8F0),
+                        disabledContainerColor = if (step1Done) Color(0xFF1A56DB) else Color(0xFFE2E8F0),
                         disabledContentColor = if (step1Done) Color.White else Color(0xFF9CA3AF)
                     ),
                     modifier = Modifier.fillMaxWidth(),
@@ -11516,9 +11581,9 @@ fun DeliveryActiveOrderScreen(
                     onClick = { currentStep = 3 },
                     enabled = step2Enabled,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (step2Done) Color(0xFF10B981) else Color.White,
+                        containerColor = if (step2Done) Color(0xFF1A56DB) else Color.White,
                         contentColor = if (step2Done) Color.White else Color(0xFF687280),
-                        disabledContainerColor = if (step2Done) Color(0xFF10B981) else Color(0xFFE2E8F0),
+                        disabledContainerColor = if (step2Done) Color(0xFF1A56DB) else Color(0xFFE2E8F0),
                         disabledContentColor = if (step2Done) Color.White else Color(0xFF9CA3AF)
                     ),
                     modifier = Modifier.fillMaxWidth(),
@@ -11538,9 +11603,9 @@ fun DeliveryActiveOrderScreen(
                     onClick = { currentStep = 4 },
                     enabled = step3Enabled,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (step3Done) Color(0xFF10B981) else Color.White,
+                        containerColor = if (step3Done) Color(0xFF1A56DB) else Color.White,
                         contentColor = if (step3Done) Color.White else Color(0xFF687280),
-                        disabledContainerColor = if (step3Done) Color(0xFF10B981) else Color(0xFFE2E8F0),
+                        disabledContainerColor = if (step3Done) Color(0xFF1A56DB) else Color(0xFFE2E8F0),
                         disabledContentColor = if (step3Done) Color.White else Color(0xFF9CA3AF)
                     ),
                     modifier = Modifier.fillMaxWidth(),
@@ -12449,7 +12514,7 @@ fun TaxiPanelScreen(
                                     if (isNotifOn) showNotifDialogReason = true else isNotifOn = true
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isNotifOn) Color(0xFF10B981) else Color(0xFF687280)
+                                    containerColor = if (isNotifOn) Color(0xFF1A56DB) else Color(0xFF687280)
                                 ),
                                 contentPadding = PaddingValues(horizontal = 10.dp),
                                 modifier = Modifier
@@ -13248,7 +13313,7 @@ fun AutoPanelScreen(
                                     if (isNotifOn) showNotifDialogReason = true else isNotifOn = true
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isNotifOn) Color(0xFF10B981) else Color(0xFF687280)
+                                    containerColor = if (isNotifOn) Color(0xFF1A56DB) else Color(0xFF687280)
                                 ),
                                 contentPadding = PaddingValues(horizontal = 10.dp),
                                 modifier = Modifier
@@ -18323,7 +18388,7 @@ fun BusRouteDetailScreen(
 
                     Button(
                         onClick = { onUpdateStatus("Arrived") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A56DB)),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -18635,7 +18700,7 @@ fun BusAgencyPanelScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(Color(0xFFF8FAFC))
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -20473,7 +20538,7 @@ fun AddProductScreen(onNavigate: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFF8FAFC))
             .verticalScroll(rememberScrollState())
     ) {
         Row(
@@ -20624,7 +20689,7 @@ fun EditProductScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFF8FAFC))
             .verticalScroll(rememberScrollState())
     ) {
         Row(
@@ -21061,7 +21126,7 @@ fun ProductDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFF8FAFC))
     ) {
         Row(
             modifier = Modifier
@@ -21346,7 +21411,7 @@ fun CreateAdScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFF8FAFC))
             .verticalScroll(rememberScrollState())
     ) {
         Row(

@@ -54,7 +54,7 @@ enum class DeliveryStep {
 enum class AppTab { HOME, ORDERS, SERVICES, NOTIFY, NEWS }
 
 enum class ActiveScreen { 
-  MAIN, FOOD, MEDICINE, TAXI, AMBULANCE, HOSPITAL, PRINT, BUS, PROFILE, DOXA_AI 
+  MAIN, FOOD, MEDICINE, TAXI, AMBULANCE, HOSPITAL, PRINT, BUS, PROFILE, DOXA_AI, GROCERY
 }
 
 data class NotificationItem(
@@ -278,12 +278,12 @@ class AppViewModel : ViewModel() {
     // --- Static Product Data ---
     val categories = listOf(
         CategoryItem("all", "All Items", "✨", 0xFFFFEBEB),
-        CategoryItem("veg", "Fruits & Veggies", "🍎", 0xFFE3F9E5),
-        CategoryItem("snacks", "Snacks & Drinks", "🍿", 0xFFFFF3D1),
-        CategoryItem("dairy", "Dairy, Bread & Eggs", "🥛", 0xFFE3F2FD),
-        CategoryItem("instant", "Instant Food", "🍜", 0xFFFCE4EC),
-        CategoryItem("personal", "Personal Care", "🧴", 0xFFEDE7F6),
-        CategoryItem("medicine", "Medicines", "💊", 0xFFE0F2FE)
+        CategoryItem("veg", "Grocery", "🛒", 0xFFE3F9E5),
+        CategoryItem("snacks", "Food Order", "🍔", 0xFFFFF3D1),
+        CategoryItem("dairy", "Taxi/Auto", "🚕", 0xFFE3F2FD),
+        CategoryItem("instant", "Medicine", "💊", 0xFFFCE4EC),
+        CategoryItem("personal", "Hospital", "🏥", 0xFFEDE7F6),
+        CategoryItem("medicine", "Ambulance", "🚑", 0xFFE0F2FE)
     )
 
     val products = mutableListOf<ProductItem>(

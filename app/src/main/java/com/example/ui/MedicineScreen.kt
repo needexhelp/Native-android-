@@ -53,8 +53,8 @@ fun MedicineScreen(
 
     val secondaryPurple = Color(0xFF8B5CF6)
     val accentGreen = Color(0xFF00C853)
-    val headerBrush = Brush.horizontalGradient(
-        colors = listOf(Color(0xFF6C2BD9), Color(0xFF8B5CF6))
+    val headerBrush = Brush.verticalGradient(
+        colors = listOf(Color(0xFF1A3BBF), Color(0xFF1A56DB))
     )
 
     // Healthcare sample medicines
@@ -114,12 +114,12 @@ fun MedicineScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF6C2BD9)
+                    containerColor = Color.Transparent
                 ),
                 modifier = Modifier.background(headerBrush)
             )
         },
-        containerColor = Color(0xFFF8F9FC),
+        containerColor = Color(0xFFF8FAFC),
         modifier = modifier
     ) { paddingValues ->
         LazyColumn(
@@ -329,7 +329,9 @@ fun MedicineScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(100.dp)
-                                        .background(Color(med.tintColorHex), RoundedCornerShape(12.dp)),
+                                        .crowmixShadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color(med.tintColorHex)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(med.labelChar, fontSize = 48.sp)
@@ -400,7 +402,7 @@ fun MedicineScreen(
                                             viewModel.addToCart(med.id)
                                             Toast.makeText(context, "${med.name} added to prescription cart!", Toast.LENGTH_SHORT).show()
                                         },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6C2BD9)),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A56DB)),
                                         shape = RoundedCornerShape(8.dp),
                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                                         modifier = Modifier

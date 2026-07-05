@@ -22,16 +22,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun SplashScreen() {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = EaseInOut),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
-    )
-
     val alphaAnim by infiniteTransition.animateFloat(
         initialValue = 0.4f,
         targetValue = 1f,
@@ -48,15 +38,6 @@ fun SplashScreen() {
             .background(Color(0xFF1800AD)),
         contentAlignment = Alignment.Center
     ) {
-        // Glow circle behind logo
-        Box(
-            modifier = Modifier
-                .size(220.dp)
-                .scale(pulseScale)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.08f))
-        )
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
