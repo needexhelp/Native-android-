@@ -90,16 +90,32 @@ class AppViewModel : ViewModel() {
     private val _activeScreen = MutableStateFlow(ActiveScreen.MAIN)
     val activeScreen: StateFlow<ActiveScreen> = _activeScreen.asStateFlow()
 
+    private val navigationStack = mutableListOf<ActiveScreen>(ActiveScreen.MAIN)
+
     fun setActiveTab(tab: AppTab) {
         _activeTab.value = tab
     }
 
     fun navigateTo(screen: ActiveScreen) {
+        if (screen == ActiveScreen.MAIN) {
+            navigationStack.clear()
+            navigationStack.add(ActiveScreen.MAIN)
+        } else {
+            if (navigationStack.isEmpty() || navigationStack.last() != screen) {
+                navigationStack.add(screen)
+            }
+        }
         _activeScreen.value = screen
     }
 
     fun navigateBack() {
-        _activeScreen.value = ActiveScreen.MAIN
+        if (navigationStack.size > 1) {
+            navigationStack.removeAt(navigationStack.size - 1)
+            val previousScreen = navigationStack.lastOrNull() ?: ActiveScreen.MAIN
+            _activeScreen.value = previousScreen
+        } else {
+            _activeScreen.value = ActiveScreen.MAIN
+        }
     }
 
     // --- Food Cart Management ---

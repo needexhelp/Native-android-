@@ -57,6 +57,7 @@ import com.example.ui.*
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import android.Manifest
 import android.content.Context
@@ -114,6 +115,18 @@ class MainActivity : ComponentActivity() {
                             val activeTab by viewModel.activeTab.collectAsState()
                             val activeScreen by viewModel.activeScreen.collectAsState()
                             val unreadCount by viewModel.unreadCount.collectAsState()
+
+                            // Global system back press handler to allow navigating back instead of closing the app.
+                            // Only disable the handler when we are at the absolute root (ActiveScreen.MAIN && AppTab.HOME)
+                            val isAtRoot = activeScreen == ActiveScreen.MAIN && activeTab == AppTab.HOME
+                            BackHandler(enabled = !isAtRoot) {
+                                if (activeScreen != ActiveScreen.MAIN) {
+                                    viewModel.navigateBack()
+                                } else {
+                                    // If we are on the main container but not on the home tab, navigate back to the home tab.
+                                    viewModel.setActiveTab(AppTab.HOME)
+                                }
+                            }
 
                 // Automatic Standard Android Permissions Requester on Startup / New User
                 val context = LocalContext.current
@@ -174,11 +187,11 @@ class MainActivity : ComponentActivity() {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                                    .padding(horizontal = 12.dp, vertical = 2.dp)
                                     .crowmixShadow(elevation = CrowmixElevation.High, shape = RoundedCornerShape(28.dp))
                                     .clip(RoundedCornerShape(28.dp))
                                     .background(Color.White)
-                                    .padding(horizontal = 12.dp, vertical = 12.dp)
+                                    .padding(horizontal = 12.dp, vertical = 3.dp)
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -201,7 +214,7 @@ class MainActivity : ComponentActivity() {
                                                     viewModel.navigateTo(ActiveScreen.MAIN)
                                                     viewModel.setActiveTab(tab)
                                                 }
-                                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                                                .padding(horizontal = 10.dp, vertical = 1.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
                                             Box(
@@ -213,17 +226,17 @@ class MainActivity : ComponentActivity() {
                                                         else
                                                             Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
                                                     )
-                                                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                                                    .padding(horizontal = 14.dp, vertical = 3.dp),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
                                                     imageVector = icon,
                                                     contentDescription = label,
                                                     tint = if (isSelected) Color.White else Color(0xFF9CA3AF),
-                                                    modifier = Modifier.size(22.dp)
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                             }
-                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Spacer(modifier = Modifier.height(1.dp))
                                             Text(
                                                 text = label,
                                                 fontSize = 10.sp,
@@ -1131,7 +1144,7 @@ fun HomeFeedContent(
                                     .weight(0.28f)
                                     .crowmixShadow(elevation = CrowmixElevation.Medium, shape = RoundedCornerShape(16.dp))
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(Brush.horizontalGradient(listOf(CrowmixBrand.Orange, CrowmixBrand.OrangeDark)))
+                                    .background(Color.White)
                                     .clickable { viewModel.navigateTo(ActiveScreen.DOXA_AI) }
                                     .padding(vertical = 13.dp),
                                 contentAlignment = Alignment.Center
@@ -1140,11 +1153,11 @@ fun HomeFeedContent(
                                     Icon(
                                         imageVector = Icons.Default.AutoAwesome,
                                         contentDescription = "AI Assistant",
-                                        tint = Color.White,
+                                        tint = Color.Black,
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "DOXA", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                    Text(text = "DOXA", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
                                 }
                             }
                         }
