@@ -372,6 +372,36 @@ class AppViewModel : ViewModel() {
         _selectedCategory.value = catId
     }
 
+    // --- Register products from screens that keep their own local catalog
+    // (e.g. GroceryScreen.kt's category/subcategory listings) so that
+    // getCartSubtotal() / getCartCount() / CartDrawerSheet can find them
+    // by id, exactly like the built-in home dashboard products.
+    fun registerExternalProduct(
+        id: String,
+        name: String,
+        category: String,
+        price: Double,
+        originalPrice: Double?,
+        qtyUnit: String,
+        emoji: String,
+        tintColorHex: Long
+    ) {
+        if (products.none { it.id == id }) {
+            products.add(
+                ProductItem(
+                    id = id,
+                    name = name,
+                    category = category,
+                    price = price,
+                    originalPrice = originalPrice,
+                    qtyUnit = qtyUnit,
+                    labelChar = emoji,
+                    tintColorHex = tintColorHex
+                )
+            )
+        }
+    }
+
     // --- Cart Actions ---
     fun addToCart(productId: String) {
         val current = _cartItems.value.toMutableMap()

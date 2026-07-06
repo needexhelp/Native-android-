@@ -256,6 +256,7 @@ fun GroceryFlowContainer(
             val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
             SubcategoryListingScreen(
                 categoryName = categoryName,
+                viewModel = viewModel,
                 onBack = { navController.navigateUp() }
             )
         }
@@ -534,6 +535,7 @@ fun CategorySection(
 @Composable
 fun SubcategoryListingScreen(
     categoryName: String,
+    viewModel: AppViewModel,
     onBack: () -> Unit
 ) {
     val subcategories = remember(categoryName) { getSubcategoriesForCategory(categoryName) }
@@ -922,6 +924,17 @@ fun SubcategoryListingScreen(
                                 ProductCard(
                                     product = product,
                                     onAddClick = {
+                                        viewModel.registerExternalProduct(
+                                            id = product.id,
+                                            name = product.name,
+                                            category = product.category,
+                                            price = product.price.toDouble(),
+                                            originalPrice = product.originalPrice.toDouble(),
+                                            qtyUnit = product.weight,
+                                            emoji = product.emoji,
+                                            tintColorHex = product.tintColorHex
+                                        )
+                                        viewModel.addToCart(product.id)
                                         Toast.makeText(context, "${product.name} added to cart!", Toast.LENGTH_SHORT).show()
                                     },
                                     isFavorite = favorites.contains(product.id),
@@ -1411,61 +1424,49 @@ fun ProductCard(
     isFavorite: Boolean,
     onFavoriteToggle: () -> Unit
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(4.dp)
-            .crowmixShadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp)),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp)
+            .padding(2.dp)
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            // Top: separate image box with half overlapping ADD button
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Top: product image floats with NO background box/card behind it
+            // (matches Blinkit/Zepto style — image only, no colored container)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp)
+                    .height(95.dp)
+                    .padding(bottom = 4.dp),
+                contentAlignment = Alignment.Center
             ) {
-                // Separate Image container Box
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(95.dp)
-                        .crowmixShadow(elevation = 3.dp, shape = RoundedCornerShape(12.dp))
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(product.tintColorHex)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Emoji illustration (slightly adjusted for 3 column aspect ratio)
-                    Text(product.emoji, fontSize = 42.sp)
+                // Emoji/illustration sits directly on the screen background —
+                // no .background(), no .clip(), no shadow behind it
+                Text(product.emoji, fontSize = 48.sp)
 
-                    // Favorite icon top-left
-                    IconButton(
-                        onClick = onFavoriteToggle,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(2.dp)
-                            .size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = if (isFavorite) Color.Red else Color.Black,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+                // Favorite heart icon, top-right corner of the image area
+                IconButton(
+                    onClick = onFavoriteToggle,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (isFavorite) Color.Red else Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
 
-                // ADD button overlapping bottom-right corner of the image box by half
+                // ADD button, bottom-right corner, slightly overlapping the image
                 Button(
                     onClick = onAddClick,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 4.dp)
                         .offset(y = 12.dp)
-                        .height(24.dp)
+                        .height(26.dp)
                         .testTag("add_product_${product.id}"),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
                         contentColor = Color(0xFF2E7D32)
@@ -1485,56 +1486,23 @@ fun ProductCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Price row (discounted in blue badge, strikethrough original price)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                // Discounted price in blue badge
-                Box(
-                    modifier = Modifier
-                        .background(Color(0xFF1800AD), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "₹${product.price}",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
-                    )
-                }
-                // Strikethrough original price
-                Text(
-                    text = "₹${product.originalPrice}",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        textDecoration = TextDecoration.LineThrough,
-                        color = Color.Gray,
-                        fontSize = 11.sp
-                    )
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Product Name (sentence case, bold, lowercase base name as source)
+            // Product name
             Text(
                 text = product.name,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp,
                     color = Color.Black
                 ),
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            // Weight/quantity text
+            // Weight/quantity
             Text(
                 text = product.weight,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -1543,74 +1511,79 @@ fun ProductCard(
                 )
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
-            // Savings badge text with dotted line separator
-            DottedDivider()
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = product.savings,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = Color(0xFF1800AD),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
-                )
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            DottedDivider()
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Rating row: star, rating, reviews | delivery time
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = Color(0xFFFFB300),
-                    modifier = Modifier.size(12.dp)
-                )
-                Spacer(modifier = Modifier.width(2.dp))
-                Text(
-                    text = "${product.rating}",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        color = Color.Black
+            // Rating + review count (only if data exists)
+            if (product.rating > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB300),
+                        modifier = Modifier.size(11.dp)
                     )
-                )
-                Text(
-                    text = "(${product.reviewCount})",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = Color.Gray,
-                        fontSize = 10.sp
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "${product.rating}",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            color = Color.Black
+                        )
                     )
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "|",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = Color.LightGray,
-                        fontSize = 10.sp
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "(${product.reviewCount})",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color.Gray,
+                            fontSize = 10.sp
+                        )
                     )
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+            }
+
+            // Delivery time badge
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🕐", fontSize = 10.sp)
+                Spacer(modifier = Modifier.width(3.dp))
                 Text(
                     text = product.deliveryTime,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = Color.Gray,
+                        color = Color(0xFF2E7D32),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Price row: current price (bold) + strikethrough MRP
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "₹${product.price}",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                )
+                if (product.originalPrice > product.price) {
+                    Text(
+                        text = "₹${product.originalPrice}",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            textDecoration = TextDecoration.LineThrough,
+                            color = Color.Gray,
+                            fontSize = 11.sp
+                        )
+                    )
+                }
             }
         }
     }
